@@ -1,0 +1,101 @@
+/**
+ * AuthController
+ *
+ * Provides endpoints to start/complete an auth method and retrieve the presentation key.
+ */
+
+import { Request, Response } from "express";
+import { UserService } from "../services/UserService";
+import { AuthMethod } from "../authMethods/AuthMethod";
+import { TwilioAuthMethod } from "../authMethods/TwilioAuthMethod";
+import { PersonaAuthMethod } from "../authMethods/PersonaAuthMethod";
+import { AuthMethodEntity } from "../types";
+
+/**
+ * Returns the appropriate AuthMethod instance given a methodType.
+ */
+function getAuthMethodInstance(methodType: string): AuthMethod {
+    switch (methodType) {
+        case "TwilioPhone":
+            return new TwilioAuthMethod({ accountSid: "mockSid", authToken: "mockToken" });
+        case "PersonaID":
+            return new PersonaAuthMethod({ apiKey: "mockApiKey" });
+        default:
+            throw new Error(`Unsupported auth method: ${methodType}`);
+    }
+}
+
+export class AuthController {
+    /**
+     * Step 1: Start the auth process (e.g. send OTP, create session, etc.)
+     * Body must include:
+     *   methodType: string
+     *   presentationKey: string (the random 256-bit key from client)
+     *   payload: any (whatever the chosen method needs)
+     */
+    public static async startAuth(req: Request, res: Response) {
+        try {
+            const { methodType, presentationKey, payload } = req.body;
+            if (!methodType || !presentationKey || !payload) {
+                return res.status(400).json({ message: "methodType, presentationKey, and payload are required." });
+            }
+
+            const authMethod = getAuthMethodInstance(methodType);
+            const result = await authMethod.startAuth(presentationKey, payload);
+            res.json(result);
+        } catch (error: any) {
+            console.error(error);
+            res.status(500).json({ message: error.message });
+        }
+    }
+
+    /**
+     * Step 2: Complete the auth process. If successful:
+     *  - If user doesn't exist, create them with the given presentationKey
+     *  - If user exists, retrieve their stored presentationKey
+     *  - Link the AuthMethod to that user if not already linked
+     *  Return the final presentationKey to the client.
+     */
+    public static async completeAuth(req: Request, res: Response) {
+        try {
+            const { methodType, presentationKey, payload } = req.body;
+            if (!methodType || !presentationKey || !payload) {
+                return res.status(400).json({ message: "methodType, presentationKey, and payload are required." });
+            }
+
+            const authMethod = getAuthMethodInstance(methodType);
+            const result = await authMethod.completeAuth(presentationKey, payload);
+            if (!result.success) {
+                return res.json(result);
+            }
+
+            // Auth successful, store or retrieve user
+            let user = await UserService.getUserByPresentationKey(presentationKey);
+            if (!user) {
+                // create new user
+                user = await UserService.createUser(presentationKey);
+            }
+
+            // Link the method if not already linked
+            const allMethods = await UserService.getAuthMethodsByUserId(user.id);
+            const foundSameMethod = allMethods.find(
+                (m) => m.methodType === methodType && authMethod.isAlreadyLinked(m.config, payload)
+            );
+            if (!foundSameMethod) {
+                // store new method
+                const config = authMethod.buildConfigFromPayload(payload);
+                await UserService.linkAuthMethod(user.id, methodType, config);
+            }
+
+            // Return the presentationKey from DB (ensures the user gets the stored key if user is existing)
+            res.json({
+                success: true,
+                presentationKey: user.presentationKey,
+                message: result.message
+            });
+        } catch (error: any) {
+            console.error(error);
+            res.status(500).json({ message: error.message });
+        }
+    }
+}
