@@ -1,70 +1,124 @@
+import { AuthMethod, AuthPayload, AuthResult } from "./AuthMethod";
+import twilio from "twilio";
+
 /**
  * TwilioAuthMethod
  *
- * This is a demonstration Auth Method that verifies ownership
- * of a phone number using Twilio (mocked in this example).
+ * A concrete implementation of AuthMethod using Twilio Verify for phone verification.
  */
-
-import { AuthMethod, AuthPayload, AuthResult } from "./AuthMethod";
-
 export class TwilioAuthMethod extends AuthMethod {
     public methodType = "TwilioPhone";
 
-    // In a real implementation, you would inject or configure Twilio credentials here.
-    constructor(private twilioConfig: { accountSid: string; authToken: string }) {
+    private twilioClient: twilio.Twilio;
+    private verifyServiceSid: string;
+
+    /**
+     * @param twilioConfig.accountSid        - Your Twilio Account SID
+     * @param twilioConfig.authToken         - Your Twilio Auth Token
+     * @param twilioConfig.verifyServiceSid  - The Twilio Verify Service SID
+     */
+    constructor(
+        private twilioConfig: {
+            accountSid: string;
+            authToken: string;
+            verifyServiceSid: string;
+        }
+    ) {
         super();
+        this.verifyServiceSid = twilioConfig.verifyServiceSid;
+        this.twilioClient = twilio(twilioConfig.accountSid, twilioConfig.authToken);
     }
 
     /**
-     * Start phone verification by sending an SMS code.
+     * Initiates the Twilio Verify flow by sending an SMS verification to the provided phone number.
+     * Expects `payload.phoneNumber`.
      *
-     * In this example, we simply pretend we do so and store the code in memory for demonstration.
+     * @param presentationKey - The user's prospective presentation key (not necessarily in the DB yet).
+     * @param payload - Must include { phoneNumber }
+     * @returns AuthResult
      */
     public async startAuth(presentationKey: string, payload: AuthPayload): Promise<AuthResult> {
         const phoneNumber = payload.phoneNumber;
         if (!phoneNumber) {
-            return { success: false, message: "phoneNumber is required" };
+            return { success: false, message: "phoneNumber is required." };
         }
 
-        // Generate a mock OTP and pretend to send via Twilio
-        const mockOtp = "123456"; // You would generate a random code in production.
-        // In a real scenario, you might save the OTP in a temporary DB or session.
+        try {
+            await this.twilioClient.verify.v2
+                .services(this.verifyServiceSid)
+                .verifications.create({
+                    to: phoneNumber,
+                    channel: "sms"
+                });
 
-        return {
-            success: true,
-            message: "OTP sent (mock).",
-            data: { otp: mockOtp } // For demonstration, we return the code.
-        };
-    }
-
-    /**
-     * Complete phone verification by checking the OTP code.
-     *
-     * In a real scenario, you'd verify that the code matches what's stored.
-     */
-    public async completeAuth(presentationKey: string, payload: AuthPayload): Promise<AuthResult> {
-        const providedOtp = payload.otp;
-        if (!providedOtp) {
-            return { success: false, message: "otp is required" };
-        }
-
-        // Check the OTP
-        if (providedOtp === "123456") {
             return {
                 success: true,
-                message: "Phone verified successfully."
+                message: `Verification code sent to ${phoneNumber}.`
             };
-        } else {
+        } catch (error: any) {
+            console.error("[TwilioAuthMethod] Error in startAuth:", error);
             return {
                 success: false,
-                message: "Invalid OTP."
+                message: error.message || "Failed to start Twilio phone verification."
             };
         }
     }
 
     /**
-     * If phone verification is successful, we store the phone number in the config
-     * so the user can re-auth in the future with that phone.
+     * Completes the Twilio Verify flow by checking the provided code against Twilio's Verify service.
+     * Expects `payload.phoneNumber` and `payload.otp`.
+     *
+     * @param presentationKey - The user's prospective presentation key.
+     * @param payload - Must include { phoneNumber, otp }
+     * @returns AuthResult
+     */
+    public async completeAuth(presentationKey: string, payload: AuthPayload): Promise<AuthResult> {
+        const phoneNumber = payload.phoneNumber;
+        const providedOtp = payload.otp;
+        if (!phoneNumber || !providedOtp) {
+            return {
+                success: false,
+                message: "phoneNumber and otp are required."
+            };
+        }
+
+        try {
+            // Attempt to verify the code
+            const verificationCheck = await this.twilioClient.verify.v2
+                .services(this.verifyServiceSid)
+                .verificationChecks.create({
+                    to: phoneNumber,
+                    code: providedOtp
+                });
+
+            if (verificationCheck.status === "approved") {
+                // Code is correct, phone verified
+                return {
+                    success: true,
+                    message: `Phone number ${phoneNumber} verified successfully.`
+                };
+            } else {
+                // Code is incorrect or expired
+                return {
+                    success: false,
+                    message: `Verification code invalid or expired. (status=${verificationCheck.status})`
+                };
+            }
+        } catch (error: any) {
+            console.error("[TwilioAuthMethod] Error in completeAuth:", error);
+            return {
+                success: false,
+                message: error.message || "Failed to complete Twilio phone verification."
+            };
+        }
+    }
+
+    /**
+     * If verification is successful, store the phone number in the config object
+     * so that the user can be recognized by that number in the future.
+     *
+     * @param payload - Must include { phoneNumber }
+     * @returns Record<string, any>
      */
     public buildConfigFromPayload(payload: AuthPayload): Record<string, any> {
         return {
@@ -73,7 +127,10 @@ export class TwilioAuthMethod extends AuthMethod {
     }
 
     /**
-     * (Optional) Check if phoneNumber from the DB config matches the payload's phoneNumber
+     * Checks if this phone number is already linked to the user.
+     *
+     * @param storedConfig
+     * @param payload
      */
     public isAlreadyLinked(storedConfig: Record<string, any>, payload: AuthPayload): boolean {
         return storedConfig.phoneNumber === payload.phoneNumber;

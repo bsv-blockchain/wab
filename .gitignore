@@ -8,3 +8,5 @@ yarn.lock
 public/.well-known/cwi-secret-server
 coverage
 .DS_Store
+dist
+src/dev.sqlite3

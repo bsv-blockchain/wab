@@ -6,10 +6,9 @@
 
 import { Request, Response } from "express";
 import { UserService } from "../services/UserService";
-import { AuthMethod } from "../authMethods/AuthMethod";
-import { TwilioAuthMethod } from "../authMethods/TwilioAuthMethod";
-import { PersonaAuthMethod } from "../authMethods/PersonaAuthMethod";
-import { AuthMethodEntity } from "../types";
+import { AuthMethod } from "../auth-methods/AuthMethod";
+import { TwilioAuthMethod } from "../auth-methods/TwilioAuthMethod";
+import { PersonaAuthMethod } from "../auth-methods/PersonaAuthMethod";
 
 /**
  * Returns the appropriate AuthMethod instance given a methodType.
@@ -17,7 +16,11 @@ import { AuthMethodEntity } from "../types";
 function getAuthMethodInstance(methodType: string): AuthMethod {
     switch (methodType) {
         case "TwilioPhone":
-            return new TwilioAuthMethod({ accountSid: "mockSid", authToken: "mockToken" });
+            return new TwilioAuthMethod({
+                accountSid: process.env.TWILIO_ACCOUNT_SID!,
+                authToken: process.env.TWILIO_AUTH_TOKEN!,
+                verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID!
+            });
         case "PersonaID":
             return new PersonaAuthMethod({ apiKey: "mockApiKey" });
         default:
