@@ -1,3 +1,4 @@
+import path from "path";
 import { Knex } from "knex";
 
 const connectionConfig = {
