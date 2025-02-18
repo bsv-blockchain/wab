@@ -44,6 +44,9 @@ jobs:
             exit 1
           fi
 
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
       # 3) Build and push Docker image to GCR
       - name: Build & Push to GCR
         run: |
