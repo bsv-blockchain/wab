@@ -92,7 +92,7 @@ export class UserService {
     static async getOrCreateFaucetPayment(userId: number, faucetAmount: number): Promise<PaymentEntity> {
         let payment = await db<PaymentEntity>("payments").where({ userId }).first();
         if (!payment) {
-            // create a new payment record
+            // TODO: create a new payment record
             // For demonstration, we pretend the "paymentData" is a simple JSON with a "txid"
             const newPaymentData = {
                 amount: faucetAmount,
