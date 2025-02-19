@@ -1,6 +1,5 @@
 import express from "express"
 import bodyParser from "body-parser"
-import cors from "cors"
 import { InfoController } from "./controllers/InfoController"
 import { AuthController } from "./controllers/AuthController"
 import { UserController } from "./controllers/UserController"
