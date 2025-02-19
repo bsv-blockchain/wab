@@ -23,7 +23,7 @@ const config: { [key: string]: Knex.Config } = {
         }
     },
     production: {
-        client: process.env.DB_CLIENT || "pg",
+        client: process.env.DB_CLIENT || "mysql",
         connection: connectionConfig,
         pool: { min: 2, max: 10 },
         migrations: {
