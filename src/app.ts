@@ -8,21 +8,18 @@ import { FaucetController } from "./controllers/FaucetController"
 
 const app = express()
 
-// Enable CORS for all origins
-app.use(cors())
-
 // Alternatively, you could add custom middleware to set headers and handle OPTIONS:
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*")
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  )
-  if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE")
-    return res.sendStatus(200)
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Headers', '*')
+  res.header('Access-Control-Allow-Methods', '*')
+  res.header('Access-Control-Expose-Headers', '*')
+  res.header('Access-Control-Allow-Private-Network', 'true')
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200)
+  } else {
+    next()
   }
-  next()
 })
 
 app.use(bodyParser.json())
