@@ -5,7 +5,7 @@ const connectionConfig = {
     user: process.env.DB_USER || "postgres",
     password: process.env.DB_PASS || "",
     database: process.env.DB_NAME || "postgres",
-    host: process.env.DB_HOST || `/cloudsql/${process.env.DB_CONNECTION_NAME}`,
+    host: process.env.DB_HOST || '',
 };
 
 const config: { [key: string]: Knex.Config } = {

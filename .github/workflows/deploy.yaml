@@ -44,7 +44,7 @@ jobs:
           IMAGE: "${{ env.GCR_HOST }}/${{ env.GOOGLE_PROJECT_ID }}/${{ env.GCR_IMAGE_NAME }}:${{ env.CURRENT_BRANCH }}-${{ github.sha }}"
           SERVICE: ${{ env.CURRENT_BRANCH == 'production' && 'prod-wab-server' || 'staging-wab-server' }}
           # New environment variables for Cloud SQL and Twilio:
-          DB_CONNECTION_NAME: ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_CONNECTION_NAME || secrets.STAGING_DB_CONNECTION_NAME }}
+          DB_HOST: ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_HOST || secrets.STAGING_DB_HOST }}
           DB_USER:             ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_USER             || secrets.STAGING_DB_USER }}
           DB_PASS:             ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_PASS             || secrets.STAGING_DB_PASS }}
           DB_NAME:             ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_NAME             || secrets.STAGING_DB_NAME }}
