@@ -1,117 +1,68 @@
-name: Deploy to Cloud Run
-
+name: Deployment
 on:
   push:
-    branches: ["master", "production"] # Staging on master, Prod on production
+    branches:
+      - master
+      - production
+
+env:
+  CURRENT_BRANCH: ${{ github.ref_name == 'production' && 'production' || 'master' }}
+  CWI_NPM_TOKEN: ${{ secrets.CWI_NPM_TOKEN }}
+  GCR_HOST: us.gcr.io
+  GOOGLE_PROJECT_ID: babbage-private
+  GCR_IMAGE_NAME: wallet-storage
 
 jobs:
-  deploy:
+  build:
+    name: Deploy
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: 'read'  # allow actions/checkout to read the repo
-      id-token: 'write' # needed for Workload Identity Federation
-
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      # 1) Authenticate to GCP via WIF
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Push Docker Image to GCR
+        uses: RafikFarhad/push-to-gcr-github-action@v4.1
+        with:
+          gcloud_service_key: ${{ secrets.DOCKER_REGISTRY_PUSH_KEY }}
+          registry: ${{ env.GCR_HOST }}
+          project_id: ${{ env.GOOGLE_PROJECT_ID }}
+          image_name: ${{ env.GCR_IMAGE_NAME }}
+          image_tag: latest,${{ env.CURRENT_BRANCH }}-${{ github.sha }}
+
+      - name: Create Service Description File
+        run: ./scripts/mkenv.sh service.${{ env.CURRENT_BRANCH }}.yaml
+        env:
+          IMAGE: "${{ env.GCR_HOST }}/${{ env.GOOGLE_PROJECT_ID }}/${{ env.GCR_IMAGE_NAME }}:${{ env.CURRENT_BRANCH }}-${{ github.sha }}"
+          SERVICE: ${{ env.CURRENT_BRANCH == 'production' && 'prod-storage' || 'staging-storage' }}
+          # New environment variables for Cloud SQL and Twilio:
+          DB_CONNECTION_NAME: ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_CONNECTION_NAME || secrets.STAGING_DB_CONNECTION_NAME }}
+          DB_USER:             ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_USER             || secrets.STAGING_DB_USER }}
+          DB_PASS:             ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_PASS             || secrets.STAGING_DB_PASS }}
+          DB_NAME:             ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_DB_NAME             || secrets.STAGING_DB_NAME }}
+          TWILIO_ACCOUNT_SID:  ${{ env.CURRENT_BRANCH == 'production' && secrets.TWILIO_ACCOUNT_SID_PROD  || secrets.TWILIO_ACCOUNT_SID_STAGING }}
+          TWILIO_AUTH_TOKEN:   ${{ env.CURRENT_BRANCH == 'production' && secrets.TWILIO_AUTH_TOKEN_PROD   || secrets.TWILIO_AUTH_TOKEN_STAGING }}
+          TWILIO_VERIFY_SERVICE_SID: ${{ env.CURRENT_BRANCH == 'production' && secrets.TWILIO_VERIFY_SERVICE_SID_PROD || secrets.TWILIO_VERIFY_SERVICE_SID_STAGING }}
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.gcp_deploy_creds }}
 
-      # 2) Set up gcloud
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      # Determine environment (staging or production) based on branch
-      - name: Determine environment
-        id: envstep
-        run: |
-          if [ "${{ github.ref_name }}" = "master" ]; then
-            echo "env=staging" >> $GITHUB_OUTPUT
-            echo "Deploying to STAGING environment."
-          elif [ "${{ github.ref_name }}" = "production" ]; then
-            echo "env=production" >> $GITHUB_OUTPUT
-            echo "Deploying to PRODUCTION environment."
-          else
-            echo "Branch not recognized for deployment. Exiting."
-            exit 1
-          fi
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker gcr.io --quiet
-
-      # 3) Build and push Docker image to GCR
-      - name: Build & Push to GCR
-        run: |
-          IMAGE_NAME="gcr.io/${{ secrets.GCP_PROJECT_ID }}/wab-server"
-          ENVIRONMENT="${{ steps.envstep.outputs.env }}"
-          
-          # Tag the image with environment + commit SHA
-          TAG="${ENVIRONMENT}-${GITHUB_SHA}"
-          
-          # Build the Docker image
-          docker build -t "${IMAGE_NAME}:${TAG}" .
-          
-          # Push to GCR
-          docker push "${IMAGE_NAME}:${TAG}"
-        shell: bash
-
-      # 4) Deploy to Cloud Run
       - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v1
+        with:
+          metadata: "service.${{ env.CURRENT_BRANCH }}.yaml"
+          region: us-west1
+
+      - name: Set Min Instances and Enable CPU Boost
         run: |
-          ENVIRONMENT="${{ steps.envstep.outputs.env }}"
-          SERVICE_NAME="wab-server-${ENVIRONMENT}"
-          REGION="us-central1"   # or your preferred region
-          
-          IMAGE_NAME="gcr.io/${{ secrets.GCP_PROJECT_ID }}/wab-server"
-          TAG="${ENVIRONMENT}-${GITHUB_SHA}"
-          
-          # Set environment-specific variables
-          if [ "$ENVIRONMENT" = "staging" ]; then
-            DOMAIN="staging.example.com"
-            DB_CONNECTION_NAME="${{ secrets.STAGING_DB_CONNECTION_NAME }}"
-            DB_USER="${{ secrets.STAGING_DB_USER }}"
-            DB_PASS="${{ secrets.STAGING_DB_PASS }}"
-            DB_NAME="${{ secrets.STAGING_DB_NAME }}"
-            TWILIO_ACCOUNT_SID="${{ secrets.TWILIO_ACCOUNT_SID_STAGING }}"
-            TWILIO_AUTH_TOKEN="${{ secrets.TWILIO_AUTH_TOKEN_STAGING }}"
-            TWILIO_VERIFY_SERVICE_SID="${{ secrets.TWILIO_VERIFY_SERVICE_SID_STAGING }}"
-            # You can add any additional environment variables needed for STAGING
-          else
-            DOMAIN="prod.example.com"
-            DB_CONNECTION_NAME="${{ secrets.PROD_DB_CONNECTION_NAME }}"
-            DB_USER="${{ secrets.PROD_DB_USER }}"
-            DB_PASS="${{ secrets.PROD_DB_PASS }}"
-            DB_NAME="${{ secrets.PROD_DB_NAME }}"
-            TWILIO_ACCOUNT_SID="${{ secrets.TWILIO_ACCOUNT_SID_PROD }}"
-            TWILIO_AUTH_TOKEN="${{ secrets.TWILIO_AUTH_TOKEN_PROD }}"
-            TWILIO_VERIFY_SERVICE_SID="${{ secrets.TWILIO_VERIFY_SERVICE_SID_PROD }}"
-            # Additional environment variables for PRODUCTION
-          fi
-          
-          # Deploy to Cloud Run
-          gcloud run deploy "$SERVICE_NAME" \
-            --image="${IMAGE_NAME}:${TAG}" \
-            --region="$REGION" \
-            --platform=managed \
-            --allow-unauthenticated \
-            --add-cloudsql-instances="$DB_CONNECTION_NAME" \
-            --set-env-vars="NODE_ENV=production" \
-            --set-env-vars="DB_CLIENT=pg" \
-            --set-env-vars="DB_CONNECTION_NAME=$DB_CONNECTION_NAME" \
-            --set-env-vars="DB_USER=$DB_USER" \
-            --set-env-vars="DB_PASS=$DB_PASS" \
-            --set-env-vars="DB_NAME=$DB_NAME" \
-            --set-env-vars="TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID" \
-            --set-env-vars="TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN" \
-            --set-env-vars="TWILIO_VERIFY_SERVICE_SID=$TWILIO_VERIFY_SERVICE_SID" \
-            --set-env-vars="PORT=8080" \
-            --service-account="${{ secrets.GCP_SERVICE_ACCOUNT }}"
-        shell: bash
+          gcloud run services update ${{ env.CURRENT_BRANCH == 'production' && 'prod-storage' || 'staging-storage' }} \
+            --min-instances=1 --cpu-boost --region=us-west1
