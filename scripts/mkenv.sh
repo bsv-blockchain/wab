@@ -22,15 +22,27 @@ spec:
         resources:
           limits:
             memory: $MEMORY_LIMIT
-        env:" > $1
+        env:" > "$1"
 
 echo "Appending environment variables to $1"
 
+# Use Perl to append environment variables with double quotes and escape special chars
 echo "Appending to $1"
 perl -E'
-  say "        - name: $_
-          value: \x27$ENV{$_}\x27" for @ARGV;
-' DB_CONNECTION_NAME DB_USER DB_PASS DB_NAME TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID BSV_NETWORK KNEX_DB_CONNECTION SERVER_PRIVATE_KEY TAAL_API_KEY COMMISSION_FEE COMMISSION_PUBLIC_KEY FEE_MODEL  >> $1
+  for my $var (@ARGV) {
+    my $val = $ENV{$var} // "";
+    # Escape any double quotes
+    $val =~ s/"/\\"/g;
+    # Escape any newlines
+    $val =~ s/\n/\\n/g;
+
+    say "        - name: $var";
+    say "          value: \"$val\"";
+  }
+' DB_CONNECTION_NAME DB_USER DB_PASS DB_NAME \
+   TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID \
+   BSV_NETWORK KNEX_DB_CONNECTION SERVER_PRIVATE_KEY \
+   TAAL_API_KEY COMMISSION_FEE COMMISSION_PUBLIC_KEY FEE_MODEL >> "$1"
 
 echo "Built! Contents of $1:"
-cat $1
+cat "$1"
