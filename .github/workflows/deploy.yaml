@@ -10,7 +10,8 @@ env:
   CWI_NPM_TOKEN: ${{ secrets.CWI_NPM_TOKEN }}
   GCR_HOST: us.gcr.io
   GOOGLE_PROJECT_ID: babbage-private
-  GCR_IMAGE_NAME: wallet-storage
+  # Updated image name to "web-server"
+  GCR_IMAGE_NAME: web-server
 
 jobs:
   build:

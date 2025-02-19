@@ -29,7 +29,7 @@ EOF
 
 echo "Appending environment variables to $1"
 
-# List of environment variable names required by the deploy script
+# Append environment variables with proper indentation (10 spaces for list items)
 for var in \
   DB_CONNECTION_NAME \
   DB_USER \
@@ -47,8 +47,8 @@ for var in \
   FEE_MODEL; do
     value=$(printenv "$var")
     if [ -n "$value" ]; then
-      echo "        - name: $var" >> $1
-      echo "          value: '$value'" >> $1
+      echo "          - name: $var" >> $1
+      echo "            value: '$value'" >> $1
     fi
 done
 
