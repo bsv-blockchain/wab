@@ -5,8 +5,10 @@
  * linking/unlinking auth methods, and retrieving faucet payments.
  */
 
+import { Setup, SetupWallet } from '@bsv/wallet-toolbox'
 import { db } from "../db/knex";
 import { User, AuthMethodEntity, PaymentEntity } from "../types";
+import { Random, RPuzzle, Utils, WalletClient } from '@bsv/sdk'
 
 export class UserService {
     /**
@@ -72,6 +74,26 @@ export class UserService {
     }
 
     /**
+     * TODO: MOVE AND FIX
+     */
+    static async findUserByConfig(
+        methodType: string,
+        config: Record<string, any>
+    ): Promise<User | undefined> {
+        const authMethod = await db<AuthMethodEntity>("auth_methods")
+            .where({
+                methodType,
+                config
+            })
+            .first();
+
+        if (!authMethod) {
+            return undefined;
+        }
+        return await this.getUserById(authMethod.userId)
+    }
+
+    /**
      * Check if an auth method exists for user with the same config (to see if already linked).
      */
     static async getAuthMethodsByUserId(userId: number): Promise<AuthMethodEntity[]> {
@@ -93,6 +115,16 @@ export class UserService {
         let payment = await db<PaymentEntity>("payments").where({ userId }).first();
         if (!payment) {
             // TODO: create a new payment record
+
+            // Generate a random 32-byte value for k (since there's no fromRandom equivalent)
+            // const randomBuffer = Random(32)
+            // const kHex = Utils.toHex(randomBuffer)
+            // const kArray = Array.from(randomBuffer) // convert to number array for RPuzzle.lock()
+
+            // // Create an RPuzzle instance (using type 'raw' in this example)
+            // const rpuzzle = new RPuzzle('raw')
+            // const lockingScript = rpuzzle.lock(kArray)
+
             // For demonstration, we pretend the "paymentData" is a simple JSON with a "txid"
             const newPaymentData = {
                 amount: faucetAmount,
