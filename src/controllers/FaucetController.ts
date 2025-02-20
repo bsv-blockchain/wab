@@ -40,7 +40,7 @@ export class FaucetController {
                     txid: payment.txid,
                     outputIndex: payment.outputIndex,
                     k: payment.k,
-                    beef: payment.beef
+                    tx: payment.beef
                 }
             });
         } catch (error: any) {
