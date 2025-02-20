@@ -35,7 +35,13 @@ export class FaucetController {
             const payment = await UserService.getOrCreateFaucetPayment(user.id, faucetAmount);
             res.json({
                 success: true,
-                paymentData: payment.paymentData
+                paymentData: {
+                    amount: payment.amount,
+                    txid: payment.txid,
+                    outputIndex: payment.outputIndex,
+                    k: payment.k,
+                    beef: payment.beef
+                }
             });
         } catch (error: any) {
             console.error(error);
