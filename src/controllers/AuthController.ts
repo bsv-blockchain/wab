@@ -85,6 +85,7 @@ export class AuthController {
             let user = await UserService.findUserByConfig(methodType, config)
             if (!user) {
                 user = await UserService.createUser(presentationKey)
+                await UserService.linkAuthMethod(user.id, methodType, config);
             }
 
             // Link the method if not already linked
