@@ -5,10 +5,13 @@
  * linking/unlinking auth methods, and retrieving faucet payments.
  */
 
-import { Setup, SetupWallet } from '@bsv/wallet-toolbox'
+import { Setup, SetupClient, SetupWallet } from '@bsv/wallet-toolbox'
 import { db } from "../db/knex";
 import { User, AuthMethodEntity, PaymentEntity } from "../types";
-import { Random, RPuzzle, Utils, WalletClient } from '@bsv/sdk'
+import { PrivateKey, Random, RPuzzle, Utils, WalletClient } from '@bsv/sdk'
+
+//temp solution 
+const SERVER_PRIVATE_KEY = process.env.SERVER_PRIVATE_KEY
 
 export class UserService {
     /**
@@ -117,23 +120,38 @@ export class UserService {
             // TODO: create a new payment record
 
             // Generate a random 32-byte value for k (since there's no fromRandom equivalent)
-            // const randomBuffer = Random(32)
-            // const kHex = Utils.toHex(randomBuffer)
-            // const kArray = Array.from(randomBuffer) // convert to number array for RPuzzle.lock()
+            const k = Random(32)
+            // Create an RPuzzle instance (using type 'raw' in this example)
+            const rPuzzle = new RPuzzle('raw')
+            const lockingScript = rPuzzle.lock(k)
 
-            // // Create an RPuzzle instance (using type 'raw' in this example)
-            // const rpuzzle = new RPuzzle('raw')
-            // const lockingScript = rpuzzle.lock(kArray)
+            // TODO: const tx wallet.createAction()
+            const wallet = await SetupClient.createWalletClientNoEnv({
+                chain: 'test',
+                rootKeyHex: SERVER_PRIVATE_KEY as string,
+                storageUrl: 'https://staging-storage.babbage.systems'
+            });
+
+            const { txid, tx } = await wallet.createAction({
+                description: 'Here is your funds!',
+                outputs: [
+                    {
+                        lockingScript: lockingScript.toHex(),
+                        satoshis: faucetAmount,
+                        outputDescription: 'Faucet payment'
+                    }
+                ]
+            })
 
             // For demonstration, we pretend the "paymentData" is a simple JSON with a "txid"
-            const newPaymentData = {
-                amount: faucetAmount,
-                txid: `FAKE_TXID_${Date.now()}`
-            };
             const [paymentId] = await db("payments").insert(
                 {
                     userId,
-                    paymentData: newPaymentData
+                    k: Utils.toHex(k),
+                    beef: Buffer.from(tx as number[]),
+                    amount: faucetAmount,
+                    outputIndex: 0,
+                    txid
                 },
                 ["id"]
             );

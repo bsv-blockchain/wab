@@ -31,7 +31,11 @@ export async function up(knex: Knex): Promise<void> {
             .references("id")
             .inTable("users")
             .onDelete("CASCADE");
-        table.json("paymentData");
+        table.binary("beef");
+        table.string("k");
+        table.string("txid")
+        table.integer("amount");
+        table.integer("outputIndex").defaultTo(0);
         table.timestamps(true, true);
     });
 }

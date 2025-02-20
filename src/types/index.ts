@@ -26,7 +26,11 @@ export interface AuthMethodEntity {
 export interface PaymentEntity {
     id: number;
     userId: number;
-    paymentData: Record<string, any> | null;
+    beef: Buffer;
+    txid: string;
+    k: string;
+    amount: number;
+    outputIndex: number
     createdAt?: string;
     updatedAt?: string;
 }
