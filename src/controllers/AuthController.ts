@@ -9,6 +9,7 @@ import { UserService } from "../services/UserService";
 import { AuthMethod } from "../auth-methods/AuthMethod";
 import { TwilioAuthMethod } from "../auth-methods/TwilioAuthMethod";
 import { PersonaAuthMethod } from "../auth-methods/PersonaAuthMethod";
+import { db } from "../db/knex";
 
 /**
  * Returns the appropriate AuthMethod instance given a methodType.
@@ -73,22 +74,29 @@ export class AuthController {
             }
 
             // Auth successful, store or retrieve user
-            let user = await UserService.getUserByPresentationKey(presentationKey);
+            // FIND BY: Verified identifier or something unique to auth method and user
+            // let user = await UserService.getUserByPresentationKey(presentationKey);
+            // if (!user) {
+            //     // create new user
+            //     user = await UserService.createUser(presentationKey);
+            // }
+
+            const config = authMethod.buildConfigFromPayload(payload)
+            let user = await UserService.findUserByConfig(methodType, config)
             if (!user) {
-                // create new user
-                user = await UserService.createUser(presentationKey);
+                user = await UserService.createUser(presentationKey)
             }
 
             // Link the method if not already linked
-            const allMethods = await UserService.getAuthMethodsByUserId(user.id);
-            const foundSameMethod = allMethods.find(
-                (m) => m.methodType === methodType && authMethod.isAlreadyLinked(m.config, payload)
-            );
-            if (!foundSameMethod) {
-                // store new method
-                const config = authMethod.buildConfigFromPayload(payload);
-                await UserService.linkAuthMethod(user.id, methodType, config);
-            }
+            // const allMethods = await UserService.getAuthMethodsByUserId(user.id);
+            // const foundSameMethod = allMethods.find(
+            //     (m) => m.methodType === methodType && authMethod.isAlreadyLinked(m.config, payload)
+            // );
+            // if (!foundSameMethod) {
+            //     // store new method
+            // const config = authMethod.buildConfigFromPayload(payload);
+            //     await UserService.linkAuthMethod(user.id, methodType, config);
+            // }
 
             // Return the presentationKey from DB (ensures the user gets the stored key if user is existing)
             res.json({
