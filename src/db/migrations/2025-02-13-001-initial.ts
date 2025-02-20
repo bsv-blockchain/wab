@@ -18,7 +18,7 @@ export async function up(knex: Knex): Promise<void> {
             .inTable("users")
             .onDelete("CASCADE");
         table.string("methodType").notNullable();
-        table.json("config").notNullable();
+        table.string("config").notNullable();
         table.timestamps(true, true);
     });
 

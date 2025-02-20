@@ -120,10 +120,8 @@ export class TwilioAuthMethod extends AuthMethod {
      * @param payload - Must include { phoneNumber }
      * @returns Record<string, any>
      */
-    public buildConfigFromPayload(payload: AuthPayload): Record<string, any> {
-        return {
-            phoneNumber: payload.phoneNumber
-        };
+    public buildConfigFromPayload(payload: AuthPayload): string {
+        return payload.phoneNumber
     }
 
     /**

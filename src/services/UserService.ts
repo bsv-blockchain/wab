@@ -53,7 +53,7 @@ export class UserService {
     static async linkAuthMethod(
         userId: number,
         methodType: string,
-        config: Record<string, any>
+        config: string
     ): Promise<AuthMethodEntity> {
         const [authMethodId] = await db("auth_methods").insert(
             {
@@ -78,7 +78,7 @@ export class UserService {
      */
     static async findUserByConfig(
         methodType: string,
-        config: Record<string, any>
+        config: string
     ): Promise<User | undefined> {
         const authMethod = await db<AuthMethodEntity>("auth_methods")
             .where({

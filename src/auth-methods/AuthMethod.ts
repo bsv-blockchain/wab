@@ -44,7 +44,7 @@ export abstract class AuthMethod {
      * Return the config object to store in the DB if fully linked.
      * Typically called after a successful `completeAuth`.
      */
-    public abstract buildConfigFromPayload(payload: AuthPayload): Record<string, any>;
+    public abstract buildConfigFromPayload(payload: AuthPayload): string;
 
     /**
      * A utility to check if a user is already linked with this method,

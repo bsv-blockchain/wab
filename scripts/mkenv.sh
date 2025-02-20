@@ -16,9 +16,6 @@ spec:
       timeoutSeconds: 3540
       containers:
       - image: $IMAGE
-        ports:
-        - name: h2c
-          containerPort: 8080
         resources:
           limits:
             memory: $MEMORY_LIMIT

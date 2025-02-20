@@ -52,10 +52,8 @@ export class PersonaAuthMethod extends AuthMethod {
     /**
      * If ID verification is successful, store relevant data.
      */
-    public buildConfigFromPayload(payload: AuthPayload): Record<string, any> {
-        return {
-            personaSessionId: payload.sessionId
-        };
+    public buildConfigFromPayload(payload: AuthPayload): string {
+        return payload.sessionId
     }
 
     /**

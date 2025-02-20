@@ -15,7 +15,7 @@ export interface AuthMethodEntity {
     id: number;
     userId: number;
     methodType: string;
-    config: Record<string, any>;
+    config: string
     createdAt?: string;
     updatedAt?: string;
 }
