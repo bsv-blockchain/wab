@@ -5,10 +5,10 @@
  * linking/unlinking auth methods, and retrieving faucet payments.
  */
 
-import { Setup, SetupClient, SetupWallet } from '@bsv/wallet-toolbox'
+import { Setup } from "@bsv/wallet-toolbox";
 import { db } from "../db/knex";
 import { User, AuthMethodEntity, PaymentEntity } from "../types";
-import { PrivateKey, Random, RPuzzle, Utils, WalletClient } from '@bsv/sdk'
+import { Random, RPuzzle, Utils } from '@bsv/sdk'
 
 //temp solution 
 const SERVER_PRIVATE_KEY = process.env.SERVER_PRIVATE_KEY
@@ -126,7 +126,7 @@ export class UserService {
             const lockingScript = rPuzzle.lock(k)
 
             // TODO: const tx wallet.createAction()
-            const wallet = await SetupClient.createWalletClientNoEnv({
+            const wallet = await Setup.createWalletClientNoEnv({
                 chain: 'test',
                 rootKeyHex: SERVER_PRIVATE_KEY as string,
                 storageUrl: 'https://staging-storage.babbage.systems'
@@ -140,8 +140,12 @@ export class UserService {
                         satoshis: faucetAmount,
                         outputDescription: 'Faucet payment'
                     }
-                ]
+                ],
+                options: {
+                    randomizeOutputs: false
+                }
             })
+            console.log('Funding txid created!', txid)
 
             // For demonstration, we pretend the "paymentData" is a simple JSON with a "txid"
             const [paymentId] = await db("payments").insert(
