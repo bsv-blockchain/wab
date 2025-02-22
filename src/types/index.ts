@@ -1,3 +1,5 @@
+import { HexString } from "@bsv/sdk";
+
 /**
  * Represents minimal user entity
  */
@@ -28,7 +30,7 @@ export interface PaymentEntity {
     userId: number;
     beef: Buffer;
     txid: string;
-    k: string;
+    k: HexString;
     amount: number;
     outputIndex: number
     createdAt?: string;

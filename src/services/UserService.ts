@@ -8,7 +8,7 @@
 import { Setup } from "@bsv/wallet-toolbox";
 import { db } from "../db/knex";
 import { User, AuthMethodEntity, PaymentEntity } from "../types";
-import { Random, RPuzzle, Utils } from '@bsv/sdk'
+import { Curve, KeyDeriver, PrivateKey, Random, RPuzzle, Utils } from '@bsv/sdk'
 
 //temp solution 
 const SERVER_PRIVATE_KEY = process.env.SERVER_PRIVATE_KEY
@@ -117,13 +117,16 @@ export class UserService {
     static async getOrCreateFaucetPayment(userId: number, faucetAmount: number): Promise<PaymentEntity> {
         let payment = await db<PaymentEntity>("payments").where({ userId }).first();
         if (!payment) {
-            // TODO: create a new payment record
-
             // Generate a random 32-byte value for k (since there's no fromRandom equivalent)
             const k = Random(32)
             // Create an RPuzzle instance (using type 'raw' in this example)
             const rPuzzle = new RPuzzle('raw')
-            const lockingScript = rPuzzle.lock(k)
+            const c = new Curve()
+            let r = c.g.mul(k).x?.umod(c.n)?.toArray()
+            if (r !== null && r !== undefined) {
+                r = r[0] > 127 ? [0, ...r] : r
+            }
+            const lockingScript = rPuzzle.lock(r!)
 
             // TODO: const tx wallet.createAction()
             const wallet = await Setup.createWalletClientNoEnv({
