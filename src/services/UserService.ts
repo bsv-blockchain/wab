@@ -12,6 +12,7 @@ import { Curve, KeyDeriver, PrivateKey, Random, RPuzzle, Utils } from '@bsv/sdk'
 
 //temp solution 
 const SERVER_PRIVATE_KEY = process.env.SERVER_PRIVATE_KEY
+const STORAGE_URL = process.env.STORAGE_URL
 
 export class UserService {
     /**
@@ -132,7 +133,7 @@ export class UserService {
             const wallet = await Setup.createWalletClientNoEnv({
                 chain: 'test',
                 rootKeyHex: SERVER_PRIVATE_KEY as string,
-                storageUrl: 'https://staging-storage.babbage.systems'
+                storageUrl: STORAGE_URL as string
             });
 
             const { txid, tx } = await wallet.createAction({
