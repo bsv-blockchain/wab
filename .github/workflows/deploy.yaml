@@ -53,7 +53,7 @@ jobs:
           TWILIO_VERIFY_SERVICE_SID: ${{ env.CURRENT_BRANCH == 'production' && secrets.TWILIO_VERIFY_SERVICE_SID_PROD || secrets.TWILIO_VERIFY_SERVICE_SID_STAGING }}
           SERVER_PRIVATE_KEY: ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_SERVER_PRIVATE_KEY || secrets.STAGING_SERVER_PRIVATE_KEY }}
           STORAGE_URL: ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_STORAGE_URL || secrets.STAGING_STORAGE_URL }}
-
+          COMMISSION_FEE: ${{ env.CURRENT_BRANCH == 'production' && secrets.PROD_COMMISSION_FEE || secrets.STAGING_COMMISSION_FEE }}
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:

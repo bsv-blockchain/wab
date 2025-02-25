@@ -7,6 +7,7 @@
 
 import { Request, Response } from "express";
 import { UserService } from "../services/UserService";
+const COMMISSION_FEE = process.env.COMMISSION_FEE
 
 export class FaucetController {
     /**
@@ -16,7 +17,7 @@ export class FaucetController {
     public static async requestFaucet(req: Request, res: Response) {
         try {
             const faucetEnabled = true; // Hardcoded for demonstration
-            const faucetAmount = 1000;  // Hardcoded for demonstration
+            const faucetAmount = Number(COMMISSION_FEE) || 1000;  // Hardcoded for demonstration
 
             if (!faucetEnabled) {
                 return res.status(403).json({ message: "Faucet is disabled." });
