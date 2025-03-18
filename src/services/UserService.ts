@@ -146,7 +146,8 @@ export class UserService {
                     }
                 ],
                 options: {
-                    randomizeOutputs: false
+                    randomizeOutputs: false,
+                    acceptDelayedBroadcast: false
                 }
             })
             console.log('Funding txid created!', txid)
