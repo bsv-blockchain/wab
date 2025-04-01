@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    service: web
+    app: wab
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: web
+  template:
+    metadata:
+      labels:
+        service: web
+    spec:
+      containers:
+        - image: docker.io/bsvb/wab:latest
+          name: web
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+      restartPolicy: Always
