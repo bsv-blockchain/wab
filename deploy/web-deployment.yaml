@@ -16,7 +16,7 @@ spec:
         service: web
     spec:
       containers:
-        - image: your_server_image
+        - image: docker.io/bsvb/wab:latest
           name: web
           ports:
             - containerPort: 8080
