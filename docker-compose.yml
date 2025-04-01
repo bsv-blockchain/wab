@@ -4,10 +4,16 @@ services:
   web:
     image: your_server_image
     build: .
+    environment:
+      DB_CLIENT: mysql
+      DB_USER: exampleuser
+      DB_PASS: examplepass
+      DB_NAME: exampledb
     ports:
       - "8080:8080"
     depends_on:
       - mysql
+    restart: always
 
   mysql:
     image: mysql:5.7
