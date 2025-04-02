@@ -17,6 +17,17 @@ spec:
     spec:
       containers:
         - image: docker.io/bsvb/wab:latest
+          env:
+          - name: DB_CLIENT
+            value: mysql
+          - name: DB_USER
+            value: exampleuser
+          - name: DB_PASS
+            value: examplepass
+          - name: DB_NAME
+            value: exampledb
+          - name: DB_HOST
+            value: mysql
           name: web
           ports:
             - containerPort: 8080
