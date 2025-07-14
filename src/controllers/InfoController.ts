@@ -12,7 +12,7 @@ export class InfoController {
      */
     public static getInfo(req: Request, res: Response): void {
         // Hard-coded for demonstration
-        const supportedAuthMethods = ["TwilioPhone", "PersonaID"];
+        const supportedAuthMethods = ["TwilioPhone"];
         const faucetEnabled = true;
         const faucetAmount = 1000; // satoshis
 
