@@ -2,10 +2,11 @@ import path from "path";
 import { Knex } from "knex";
 
 const connectionConfig = {
-    user: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASS || "",
-    database: process.env.DB_NAME || "postgres",
-    host: process.env.DB_HOST || '',
+    user: process.env.DB_USER!,
+    password: process.env.DB_PASS!,
+    database: process.env.DB_NAME!,
+    host: process.env.DB_HOST!,
+    port: parseInt(process.env.DB_PORT!),
 };
 
 const config: { [key: string]: Knex.Config } = {
@@ -23,7 +24,7 @@ const config: { [key: string]: Knex.Config } = {
         }
     },
     production: {
-        client: process.env.DB_CLIENT || "mysql",
+        client: process.env.DB_CLIENT || "mysql2",
         connection: connectionConfig,
         pool: { min: 2, max: 10 },
         migrations: {
