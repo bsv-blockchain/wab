@@ -19,7 +19,7 @@ spec:
         - image: docker.io/bsvb/wab:latest
           env:
           - name: DB_CLIENT
-            value: mysql
+            value: mysql2
           - name: DB_USER
             value: exampleuser
           - name: DB_PASS

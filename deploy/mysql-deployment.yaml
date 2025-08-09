@@ -27,7 +27,7 @@ spec:
               value: example
             - name: MYSQL_USER
               value: exampleuser
-          image: mysql:5.7
+          image: mysql:8
           name: mysql
           ports:
             - containerPort: 3306
