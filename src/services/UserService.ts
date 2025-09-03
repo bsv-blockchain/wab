@@ -19,15 +19,20 @@ export class UserService {
      * Create a new user with a given presentationKey
      */
     static async createUser(presentationKey: string): Promise<User> {
-        const [id] = await db("users").insert(
-            { presentationKey },
-            ["id"]
-        );
-        const user = await this.getUserById(id as number);
-        if (!user) {
-            throw new Error("User creation failed");
+        try {
+            const [id] = await db("users").insert(
+                { presentationKey },
+                ["id"]
+            );
+            const user = await this.getUserById(id as number);
+            if (!user) {
+                throw new Error("User creation failed");
+            }
+            return user;
+        } catch (error: any) {
+            console.error("[UserService] Error in createUser:", error);
+            throw error;
         }
-        return user;
     }
 
     /**
@@ -153,17 +158,15 @@ export class UserService {
             console.log('Funding txid created!', txid)
 
             // For demonstration, we pretend the "paymentData" is a simple JSON with a "txid"
-            const [paymentId] = await db("payments").insert(
-                {
-                    userId,
-                    k: Utils.toHex(k),
-                    beef: Buffer.from(tx as number[]),
-                    amount: faucetAmount,
-                    outputIndex: 0,
-                    txid
-                },
-                ["id"]
-            );
+            const insertResult = await db("payments").insert({
+                userId,
+                k: Utils.toHex(k),
+                beef: Buffer.from(tx as number[]),
+                amount: faucetAmount,
+                outputIndex: 0,
+                txid
+            });
+            const paymentId = insertResult[0]; // MySQL returns the inserted ID as the first element
             payment = await db<PaymentEntity>("payments")
                 .where({ id: paymentId })
                 .first();
