@@ -8,6 +8,7 @@ import { Request, Response } from "express";
 import { UserService } from "../services/UserService";
 import { AuthMethod } from "../auth-methods/AuthMethod";
 import { TwilioAuthMethod } from "../auth-methods/TwilioAuthMethod";
+import { DevConsoleAuthMethod } from "../auth-methods/DevConsoleAuthMethod";
 import { PersonaAuthMethod } from "../auth-methods/PersonaAuthMethod";
 import { db } from "../db/knex";
 
@@ -22,6 +23,8 @@ function getAuthMethodInstance(methodType: string): AuthMethod {
                 authToken: process.env.TWILIO_AUTH_TOKEN!,
                 verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID!
             });
+        case "DevConsole":
+            return new DevConsoleAuthMethod();
         // Add support for other auth methods if required.
         // case "PersonaID":
         //     return new PersonaAuthMethod({ apiKey: "mockApiKey" });
