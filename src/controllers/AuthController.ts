@@ -22,8 +22,9 @@ function getAuthMethodInstance(methodType: string): AuthMethod {
                 authToken: process.env.TWILIO_AUTH_TOKEN!,
                 verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID!
             });
-        case "PersonaID":
-            return new PersonaAuthMethod({ apiKey: "mockApiKey" });
+        // Add support for other auth methods if required.
+        // case "PersonaID":
+        //     return new PersonaAuthMethod({ apiKey: "mockApiKey" });
         default:
             throw new Error(`Unsupported auth method: ${methodType}`);
     }
