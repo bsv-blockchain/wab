@@ -9,8 +9,9 @@ import { UserService } from "../services/UserService";
 import { AuthMethod } from "../auth-methods/AuthMethod";
 import { TwilioAuthMethod } from "../auth-methods/TwilioAuthMethod";
 import { DevConsoleAuthMethod } from "../auth-methods/DevConsoleAuthMethod";
-import { PersonaAuthMethod } from "../auth-methods/PersonaAuthMethod";
-import { db } from "../db/knex";
+
+// Singleton instance to maintain state between requests, given dev only in memory use.
+const dev = new DevConsoleAuthMethod()
 
 /**
  * Returns the appropriate AuthMethod instance given a methodType.
@@ -24,7 +25,7 @@ function getAuthMethodInstance(methodType: string): AuthMethod {
                 verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID!
             });
         case "DevConsole":
-            return new DevConsoleAuthMethod();
+            return dev;
         // Add support for other auth methods if required.
         // case "PersonaID":
         //     return new PersonaAuthMethod({ apiKey: "mockApiKey" });

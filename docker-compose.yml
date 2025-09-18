@@ -2,7 +2,7 @@ services:
   web:
     build: .
     environment:
-      DEV_CONSOLE_ENABLED: 'true'
+      DEV_CONSOLE_AUTH_METHOD_ENABLED: 'true'
       DB_CLIENT: mysql2
       DB_USER: app
       DB_PASS: pass1234
