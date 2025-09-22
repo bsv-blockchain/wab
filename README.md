@@ -16,6 +16,12 @@ Additionally, the WAB provides a **faucet** feature that can make a one-time BSV
 
 ---
 
+## How the 2 of 3 Recovery System Works
+
+[Details](./how-it-works.md) on how the system actually works under the hood. Only the presentation key recovery happens via WAB, but the context might help some understand the purpose of this server.
+
+---
+
 ## Features & Capabilities
 
 1. **Extensible Auth Methods** – Offers a generic interface to link multiple authentication methods to the same key. 
