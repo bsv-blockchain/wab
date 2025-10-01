@@ -6,6 +6,8 @@
 
 import { Request, Response } from "express";
 
+const devConsoleEnabled = process.env.DEV_CONSOLE_AUTH_METHOD_ENABLED === "true";
+
 export class InfoController {
     /**
      * Return the WAB server info, including supported Auth Methods, faucet enablement, etc.
@@ -13,6 +15,7 @@ export class InfoController {
     public static getInfo(req: Request, res: Response): void {
         // Hard-coded for demonstration
         const supportedAuthMethods = ["TwilioPhone"];
+        if (devConsoleEnabled) supportedAuthMethods.push("DevConsole");
         const faucetEnabled = true;
         const faucetAmount = 1000; // satoshis
 
