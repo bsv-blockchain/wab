@@ -1,6 +1,6 @@
 {
     "name": "wab-server",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Wallet Authentication Backend (WAB) server",
     "main": "dist/server.js",
     "scripts": {
