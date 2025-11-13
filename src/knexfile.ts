@@ -17,10 +17,20 @@ const config: { [key: string]: Knex.Config } = {
     },
     test: {
         client: "sqlite3",
-        connection: ":memory:",
+        connection: {
+            filename: ":memory:"
+        },
         useNullAsDefault: true,
         migrations: {
-            directory: path.resolve(__dirname, "src/db/migrations")
+            directory: path.resolve(__dirname, "db/migrations")
+        },
+        pool: {
+            min: 1,
+            max: 1,
+            afterCreate: (conn: any, cb: any) => {
+                // Keep connection alive for duration of tests
+                cb(null, conn);
+            }
         }
     },
     production: {

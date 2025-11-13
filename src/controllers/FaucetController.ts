@@ -33,7 +33,21 @@ export class FaucetController {
                 return res.status(404).json({ message: "User not found" });
             }
 
+            // Check if any of the user's auth methods have already received faucet
+            const authMethods = await UserService.getAuthMethodsByUserId(user.id);
+            const hasReceivedFaucet = authMethods.some(am => am.receivedFaucet);
+
+            if (hasReceivedFaucet) {
+                return res.status(403).json({
+                    message: "This account has already received a faucet payment"
+                });
+            }
+
             const payment = await UserService.getOrCreateFaucetPayment(user.id, faucetAmount);
+
+            // Mark all auth methods as having received faucet
+            await UserService.markFaucetReceived(user.id);
+
             res.json({
                 success: true,
                 paymentData: {

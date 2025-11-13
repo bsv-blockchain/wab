@@ -1,6 +1,11 @@
 import { AuthMethod, AuthPayload, AuthResult } from "./AuthMethod";
 import twilio from "twilio";
 
+// Example admin phone number for testing
+const ADMIN_PHONE_NUMBERS = [
+    { phoneNumber: "+18006382638", otp: "123456" }
+]
+
 /**
  * TwilioAuthMethod
  *
@@ -44,6 +49,22 @@ export class TwilioAuthMethod extends AuthMethod {
         }
 
         try {
+            const isVoipNumber = await this.isVoipNumber(phoneNumber);
+            if (isVoipNumber) {
+                return {
+                    success: false,
+                    message: "VOIP phone numbers are not supported for verification."
+                };
+            }
+        } catch (error: any) {
+            console.error("[TwilioAuthMethod] Error validating phone number:", error);
+            return {
+                success: false,
+                message: "Failed to validate phone number for verification."
+            };
+        }
+
+        try {
             await this.twilioClient.verify.v2
                 .services(this.verifyServiceSid)
                 .verifications.create({
@@ -83,6 +104,14 @@ export class TwilioAuthMethod extends AuthMethod {
         }
 
         try {
+            // Mock verification for admin/test accounts
+            if (ADMIN_PHONE_NUMBERS.some(admin => admin.phoneNumber === phoneNumber && admin.otp === providedOtp)) {
+                return {
+                    success: true,
+                    message: `Phone number ${phoneNumber} verified successfully.`
+                }
+            }
+
             // Attempt to verify the code
             const verificationCheck = await this.twilioClient.verify.v2
                 .services(this.verifyServiceSid)
@@ -132,5 +161,19 @@ export class TwilioAuthMethod extends AuthMethod {
      */
     public isAlreadyLinked(storedConfig: Record<string, any>, payload: AuthPayload): boolean {
         return storedConfig.phoneNumber === payload.phoneNumber;
+    }
+
+    private async isVoipNumber(phoneNumber: string): Promise<boolean> {
+        const lookup = await this.twilioClient.lookups.v2
+            .phoneNumbers(phoneNumber)
+            .fetch({ fields: "line_type_intelligence" });
+
+        const lineTypeIntelligence = lookup.lineTypeIntelligence as any;
+        const lineType =
+            typeof lineTypeIntelligence === "string"
+                ? lineTypeIntelligence
+                : lineTypeIntelligence?.lineType || lineTypeIntelligence?.line_type;
+
+        return (lineType || "").toLowerCase() === "voip";
     }
 }

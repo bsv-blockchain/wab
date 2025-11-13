@@ -8,31 +8,35 @@
 import { Setup } from "@bsv/wallet-toolbox";
 import { db } from "../db/knex";
 import { User, AuthMethodEntity, PaymentEntity } from "../types";
-import { Curve, KeyDeriver, PrivateKey, Random, RPuzzle, Utils } from '@bsv/sdk'
+import { Curve, Random, RPuzzle, Utils } from '@bsv/sdk'
 
 //temp solution 
 const SERVER_PRIVATE_KEY = process.env.SERVER_PRIVATE_KEY
 const STORAGE_URL = process.env.STORAGE_URL
+const BSV_NETWORK = process.env.BSV_NETWORK
 
 export class UserService {
     /**
      * Create a new user with a given presentationKey
      */
     static async createUser(presentationKey: string): Promise<User> {
-        try {
-            const [id] = await db("users").insert(
-                { presentationKey },
-                ["id"]
-            );
-            const user = await this.getUserById(id as number);
-            if (!user) {
-                throw new Error("User creation failed");
-            }
-            return user;
-        } catch (error: any) {
-            console.error("[UserService] Error in createUser:", error);
-            throw error;
+        // Note: SQLite does not support RETURNING. Knex will return the inserted row id as a number in SQLite,
+        // while in MySQL/Postgres it may return an object when specifying returning columns.
+        const insertResult: any = await db("users").insert({ presentationKey });
+
+        const insertedId = Array.isArray(insertResult)
+            ? (typeof insertResult[0] === "number"
+                ? insertResult[0]
+                : (insertResult[0]?.id as number | undefined))
+            : (typeof insertResult === "number"
+                ? insertResult
+                : (insertResult?.id as number | undefined));
+
+        const user = await this.getUserById(insertedId as number);
+        if (!user) {
+            throw new Error("User creation failed");
         }
+        return user;
     }
 
     /**
@@ -58,17 +62,39 @@ export class UserService {
 
     /**
      * Link an AuthMethod to the user
+     * Checks if this auth method (methodType + config) already exists.
+     * If it does, reuses it and updates the userId.
+     * This prevents faucet abuse by tracking auth methods across account deletions.
      */
     static async linkAuthMethod(
         userId: number,
         methodType: string,
         config: string
     ): Promise<AuthMethodEntity> {
+        // Check if this auth method already exists (from previous signup)
+        const existing = await db<AuthMethodEntity>("auth_methods")
+            .where({ methodType, config })
+            .first();
+
+        if (existing) {
+            // Reuse existing auth method, update userId to link to current user
+            await db("auth_methods")
+                .where({ id: existing.id })
+                .update({ userId });
+
+            return {
+                ...existing,
+                userId
+            };
+        }
+
+        // Create new auth method
         const [authMethodId] = await db("auth_methods").insert(
             {
                 userId,
                 methodType,
-                config
+                config,
+                receivedFaucet: false
             },
             ["id"]
         );
@@ -83,7 +109,8 @@ export class UserService {
     }
 
     /**
-     * TODO: MOVE AND FIX
+     * Find user by auth method config (email, phone, etc.)
+     * Returns undefined if auth method doesn't exist or has no linked user
      */
     static async findUserByConfig(
         methodType: string,
@@ -96,10 +123,10 @@ export class UserService {
             })
             .first();
 
-        if (!authMethod) {
+        if (!authMethod || !authMethod.userId) {
             return undefined;
         }
-        return await this.getUserById(authMethod.userId)
+        return await this.getUserById(authMethod.userId);
     }
 
     /**
@@ -115,6 +142,16 @@ export class UserService {
 
     static async deleteAuthMethodById(id: number): Promise<void> {
         await db("auth_methods").where({ id }).del();
+    }
+
+    /**
+     * Mark all auth methods for a user as having received the faucet.
+     * This prevents re-claiming even if the user deletes and re-signs up.
+     */
+    static async markFaucetReceived(userId: number): Promise<void> {
+        await db("auth_methods")
+            .where({ userId })
+            .update({ receivedFaucet: true });
     }
 
     /**
@@ -134,9 +171,8 @@ export class UserService {
             }
             const lockingScript = rPuzzle.lock(r!)
 
-            // TODO: const tx wallet.createAction()
             const wallet = await Setup.createWalletClientNoEnv({
-                chain: 'test',
+                chain: BSV_NETWORK === 'testnet' ? 'test' : 'main',
                 rootKeyHex: SERVER_PRIVATE_KEY as string,
                 storageUrl: STORAGE_URL as string
             });
@@ -158,15 +194,17 @@ export class UserService {
             console.log('Funding txid created!', txid)
 
             // For demonstration, we pretend the "paymentData" is a simple JSON with a "txid"
-            const insertResult = await db("payments").insert({
-                userId,
-                k: Utils.toHex(k),
-                beef: Buffer.from(tx as number[]),
-                amount: faucetAmount,
-                outputIndex: 0,
-                txid
-            });
-            const paymentId = insertResult[0]; // MySQL returns the inserted ID as the first element
+            const [paymentId] = await db("payments").insert(
+                {
+                    userId,
+                    k: Utils.toHex(k),
+                    beef: Buffer.from(tx as number[]),
+                    amount: faucetAmount,
+                    outputIndex: 0,
+                    txid
+                },
+                ["id"]
+            );
             payment = await db<PaymentEntity>("payments")
                 .where({ id: paymentId })
                 .first();

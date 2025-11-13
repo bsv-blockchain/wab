@@ -15,9 +15,10 @@ export interface User {
  */
 export interface AuthMethodEntity {
     id: number;
-    userId: number;
+    userId: number | null;
     methodType: string;
-    config: string
+    config: string;
+    receivedFaucet: boolean;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -27,12 +28,12 @@ export interface AuthMethodEntity {
  */
 export interface PaymentEntity {
     id: number;
-    userId: number;
+    userId: number | null;
     beef: Buffer;
     txid: string;
     k: HexString;
     amount: number;
-    outputIndex: number
+    outputIndex: number;
     createdAt?: string;
     updatedAt?: string;
 }
