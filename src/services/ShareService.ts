@@ -207,11 +207,11 @@ export class ShareService {
         const windowStart = new Date(Date.now() - config.windowMinutes * 60 * 1000);
 
         // Check failed attempts within the window for this user
-        const failedAttempts = await db<ShareAccessLogEntity>("share_access_log")
+        const failedAttempts = await db("share_access_log")
             .where({ userId, action, success: false })
             .where("timestamp", ">=", windowStart)
             .count("* as count")
-            .first();
+            .first() as { count: string | number } | undefined;
 
         const attemptCount = Number(failedAttempts?.count || 0);
 
@@ -240,11 +240,11 @@ export class ShareService {
         }
 
         // Also check IP-based rate limiting (more aggressive)
-        const ipFailedAttempts = await db<ShareAccessLogEntity>("share_access_log")
+        const ipFailedAttempts = await db("share_access_log")
             .where({ ipAddress, action, success: false })
             .where("timestamp", ">=", windowStart)
             .count("* as count")
-            .first();
+            .first() as { count: string | number } | undefined;
 
         const ipAttemptCount = Number(ipFailedAttempts?.count || 0);
 
