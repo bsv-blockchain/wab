@@ -27,7 +27,7 @@ Additionally, the WAB provides a **faucet** feature that can make a one-time BSV
 1. **Extensible Auth Methods** – Offers a generic interface to link multiple authentication methods to the same key. 
 2. **Multi-Factor** – Users can link multiple methods, each requiring verification for future access to the same key.
 3. **Faucet** – One-time or recurring (customizable) faucet payment logic for new accounts.
-4. **Knex-based Database** – Uses migrations for reliable schema updates (supports MySQL, or SQLite).
+4. **Knex-based Database** – Uses migrations for reliable schema updates (supports MySQL or SQLite).
 5. **TypeScript** – Strict typing, improved developer experience.
 6. **Docker** – Containerized for easy deployment.
 7. **CI/CD** – Example GitHub Actions workflow to build, push, and deploy to **Google Cloud Run** with **Cloud SQL**.
