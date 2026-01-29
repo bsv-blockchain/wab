@@ -61,7 +61,7 @@ New auth methods must implement:
 - **UserService** - Database operations for users, auth methods, and faucet payments. User lookup happens via `findUserByConfig()` which searches by methodType + config (e.g., phone number).
 
 #### Database (`src/db/`)
-Uses Knex.js with support for SQLite (dev), PostgreSQL/MySQL (production):
+Uses Knex.js with support for SQLite (dev), MySQL (production):
 - **users** - id, presentationKey (unique)
 - **auth_methods** - id, userId, methodType, config (stores verified identifier like phone number)
 - **payments** - id, userId, beef (transaction bytes), k (R-puzzle key), txid, amount, outputIndex
