@@ -6,6 +6,7 @@ import { AuthController } from "./controllers/AuthController"
 import { UserController } from "./controllers/UserController"
 import { FaucetController } from "./controllers/FaucetController"
 import { AccountDeletionController } from "./controllers/AccountDeletionController"
+import { ShareController } from "./controllers/ShareController"
 
 const app = express()
 
@@ -54,5 +55,18 @@ app.post("/user/delete", UserController.deleteUser)
 
 // Faucet route
 app.post("/faucet/request", FaucetController.requestFaucet)
+
+// Shamir share routes (for 2-of-3 key recovery system)
+// Rate limited to prevent brute-force OTP attacks and share enumeration
+const shareLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minute window
+    max: 10, // Limit each IP to 10 requests per window
+    message: "Too many share requests from this IP, please try again after 15 minutes",
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+app.post("/share/store", shareLimiter, ShareController.storeShare)
+app.post("/share/retrieve", shareLimiter, ShareController.retrieveShare)
+app.post("/share/update", shareLimiter, ShareController.updateShare)
 
 export default app

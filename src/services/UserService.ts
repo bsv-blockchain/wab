@@ -61,6 +61,41 @@ export class UserService {
     }
 
     /**
+     * Retrieve user by userIdHash (for Shamir flow)
+     */
+    static async getUserByUserIdHash(userIdHash: string): Promise<User | undefined> {
+        return db<User>("users").where({ userIdHash }).first();
+    }
+
+    /**
+     * Create a new user with userIdHash (for Shamir flow)
+     * Uses a placeholder presentationKey since legacy field is NOT NULL
+     */
+    static async createUserWithUserIdHash(userIdHash: string): Promise<User> {
+        // Generate a unique placeholder for the legacy presentationKey field
+        const placeholderKey = `shamir_${userIdHash.substring(0, 48)}`;
+
+        const insertResult: any = await db("users").insert({
+            presentationKey: placeholderKey,
+            userIdHash
+        });
+
+        const insertedId = Array.isArray(insertResult)
+            ? (typeof insertResult[0] === "number"
+                ? insertResult[0]
+                : (insertResult[0]?.id as number | undefined))
+            : (typeof insertResult === "number"
+                ? insertResult
+                : (insertResult?.id as number | undefined));
+
+        const user = await this.getUserById(insertedId as number);
+        if (!user) {
+            throw new Error("User creation failed");
+        }
+        return user;
+    }
+
+    /**
      * Link an AuthMethod to the user
      * Checks if this auth method (methodType + config) already exists.
      * If it does, reuses it and updates the userId.

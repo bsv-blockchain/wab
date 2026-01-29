@@ -37,3 +37,40 @@ export interface PaymentEntity {
     createdAt?: string;
     updatedAt?: string;
 }
+
+/**
+ * Represents a Shamir Share stored on the server (Share B)
+ * The share is encrypted with AES-256-GCM using a server-managed key
+ */
+export interface ShamirShareEntity {
+    id: number;
+    userId: number;
+    shareEncrypted: Buffer;  // AES-256-GCM encrypted share
+    shareNonce: string;      // GCM nonce (IV) as hex
+    shareTag: string;        // GCM auth tag as hex
+    shareVersion: number;    // For key rotation tracking
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+/**
+ * Represents a share access log entry for rate limiting and audit
+ */
+export interface ShareAccessLogEntity {
+    id: number;
+    userId: number;
+    ipAddress: string;
+    action: 'store' | 'retrieve' | 'update';
+    success: boolean;
+    failureReason?: string;
+    timestamp: string;
+}
+
+/**
+ * Rate limit configuration
+ */
+export interface RateLimitConfig {
+    maxAttempts: number;
+    windowMinutes: number;
+    lockoutMinutes: number;
+}
