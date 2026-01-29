@@ -71,6 +71,13 @@ export class UserService {
      * Create a new user with userIdHash (for Shamir flow)
      * Uses a placeholder presentationKey since legacy field is NOT NULL
      */
+    /**
+     * Delete a user by userIdHash (for Shamir flow)
+     */
+    static async deleteUserByUserIdHash(userIdHash: string): Promise<void> {
+        await db("users").where({ userIdHash }).del();
+    }
+
     static async createUserWithUserIdHash(userIdHash: string): Promise<User> {
         // Generate a unique placeholder for the legacy presentationKey field
         const placeholderKey = `shamir_${userIdHash.substring(0, 48)}`;

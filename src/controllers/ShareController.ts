@@ -302,4 +302,78 @@ export class ShareController {
             });
         }
     }
+
+    /**
+     * Delete a user's account and their stored Shamir share
+     *
+     * This endpoint allows Shamir users to delete their account.
+     * Requires OTP verification to prevent unauthorized deletion.
+     *
+     * Request body:
+     *   - methodType: string (auth method used)
+     *   - payload: object (contains OTP and auth method specific data)
+     *   - userIdHash: string (SHA256 hash of user's identity key)
+     */
+    public static async deleteUser(req: Request, res: Response) {
+        const ipAddress = getClientIp(req);
+
+        try {
+            const { methodType, payload, userIdHash } = req.body;
+
+            if (!methodType || !payload || !userIdHash) {
+                return res.status(400).json({
+                    success: false,
+                    message: "methodType, payload, and userIdHash are required."
+                });
+            }
+
+            // Find user by userIdHash
+            const user = await UserService.getUserByUserIdHash(userIdHash);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
+
+            // Check rate limiting (reuse retrieve limits for delete operations)
+            const rateLimit = await ShareService.isRateLimited(user.id, ipAddress, "retrieve");
+            if (rateLimit.limited) {
+                await ShareService.logAccess(user.id, ipAddress, "retrieve", false, "Rate limited (delete attempt)");
+                return res.status(429).json({
+                    success: false,
+                    message: `Too many attempts. Try again in ${rateLimit.retryAfterMinutes} minutes.`
+                });
+            }
+
+            // Verify OTP
+            const authMethod = getAuthMethodInstance(methodType);
+            const authResult = await authMethod.completeAuth(userIdHash, payload);
+
+            if (!authResult.success) {
+                await ShareService.logAccess(user.id, ipAddress, "retrieve", false, "OTP verification failed (delete attempt)");
+                return res.status(401).json({
+                    success: false,
+                    message: authResult.message || "OTP verification failed"
+                });
+            }
+
+            // Delete the user's share first (if exists)
+            await ShareService.deleteShare(user.id);
+
+            // Delete the user account (cascades to auth_methods via FK)
+            await UserService.deleteUserByUserIdHash(userIdHash);
+
+            res.json({
+                success: true,
+                message: "Account and all associated data deleted successfully."
+            });
+        } catch (error: any) {
+            console.error("[ShareController] deleteUser error:", error);
+            res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }

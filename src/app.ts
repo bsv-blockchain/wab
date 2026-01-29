@@ -68,5 +68,6 @@ const shareLimiter = rateLimit({
 app.post("/share/store", shareLimiter, ShareController.storeShare)
 app.post("/share/retrieve", shareLimiter, ShareController.retrieveShare)
 app.post("/share/update", shareLimiter, ShareController.updateShare)
+app.post("/share/delete", shareLimiter, ShareController.deleteUser)
 
 export default app
