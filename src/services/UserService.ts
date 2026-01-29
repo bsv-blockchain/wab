@@ -21,7 +21,7 @@ export class UserService {
      */
     static async createUser(presentationKey: string): Promise<User> {
         // Note: SQLite does not support RETURNING. Knex will return the inserted row id as a number in SQLite,
-        // while in MySQL/Postgres it may return an object when specifying returning columns.
+        // while in MySQL it may return an object when specifying returning columns.
         const insertResult: any = await db("users").insert({ presentationKey });
 
         const insertedId = Array.isArray(insertResult)
