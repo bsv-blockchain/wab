@@ -27,7 +27,7 @@ Additionally, the WAB provides a **faucet** feature that can make a one-time BSV
 1. **Extensible Auth Methods** – Offers a generic interface to link multiple authentication methods to the same key. 
 2. **Multi-Factor** – Users can link multiple methods, each requiring verification for future access to the same key.
 3. **Faucet** – One-time or recurring (customizable) faucet payment logic for new accounts.
-4. **Knex-based Database** – Uses migrations for reliable schema updates (supports Postgres, MySQL, or SQLite).
+4. **Knex-based Database** – Uses migrations for reliable schema updates (supports MySQL, or SQLite).
 5. **TypeScript** – Strict typing, improved developer experience.
 6. **Docker** – Containerized for easy deployment.
 7. **CI/CD** – Example GitHub Actions workflow to build, push, and deploy to **Google Cloud Run** with **Cloud SQL**.
@@ -86,7 +86,7 @@ server/
 
 - **Node.js 18+** (or 16+ should also work, but 18+ recommended for built-in Web Crypto).
 - **npm** or **yarn** package manager.
-- **SQLite** (for quick local dev) or a local Postgres/MySQL database if you prefer.
+- **SQLite** (for quick local dev) or a local MySQL database if you prefer.
 
 > **Note**: You can also run it in Docker locally. If so, ensure you have **Docker** installed.
 
@@ -118,7 +118,7 @@ server/
 
 ### Database Configuration
 
-By default, in **development**, the [`knexfile.ts`](./knexfile.ts) is configured to use **SQLite**. This is perfect for quick local testing. If you want to use Postgres or MySQL locally, update the `development` section of the `knexfile.ts`.
+By default, in **development**, the [`knexfile.ts`](./knexfile.ts) is configured to use **SQLite**. This is perfect for quick local testing. If you want to use MySQL locally, update the `development` section of the `knexfile.ts`.
 
 ```ts
 // Example (knexfile.ts snippet):
@@ -147,9 +147,9 @@ TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxx
 TWILIO_VERIFY_SERVICE_SID=VExxxxxxxxx
 
-# If using a local Postgres or other DB, for example:
+# If using a local MySQL or other DB, for example:
 DB_CLIENT=pg
-DB_USER=postgres
+DB_USER=mysql
 DB_PASS=password
 DB_NAME=wallet_auth
 DB_HOST=localhost
@@ -237,7 +237,7 @@ This guide uses **Google Cloud** services:
 
 - **Google Cloud Run** for serverless container hosting.
 - **Google Container Registry (GCR)** for container images.
-- **Cloud SQL** for database hosting (Postgres or MySQL).
+- **Cloud SQL** for database hosting (MySQL).
 - **GitHub Actions** for CI/CD with **Workload Identity Federation** (WIF).
 
 ### High-Level Architecture
@@ -249,7 +249,7 @@ This guide uses **Google Cloud** services:
 
 ### Cloud SQL Database Setup
 
-1. Create a **Cloud SQL** instance (Postgres or MySQL).
+1. Create a **Cloud SQL** instance (MySQL).
 2. Make note of your instance name (e.g., `my-project:us-central1:wab-sql`), username, and password.
 3. (Optional) Enable a **private IP** if you want a fully private connection. Otherwise, Cloud Run can connect with `--add-cloudsql-instances`.
 
