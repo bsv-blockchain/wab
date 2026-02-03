@@ -1,7 +1,18 @@
 # ------------------------------------------------------------------------------
 # 1) Builder Stage: builds TypeScript
 # ------------------------------------------------------------------------------
-FROM node:22-alpine AS builder
+FROM public.ecr.aws/docker/library/node:20-bookworm-slim AS builder
+
+# OCI-compliant labels for AWS Marketplace
+LABEL org.opencontainers.image.title="Wallet Authentication Backend"
+LABEL org.opencontainers.image.description="Multi-factor authentication backend for BSV wallets"
+LABEL org.opencontainers.image.vendor="BSV Blockchain"
+LABEL org.opencontainers.image.version="1.0.8"
+LABEL org.opencontainers.image.source="https://github.com/bsv-blockchain/wab"
+LABEL org.opencontainers.image.licenses="Open-BSV-License-v4"
+LABEL org.opencontainers.image.url="https://github.com/bsv-blockchain/wab"
+LABEL org.opencontainers.image.documentation="https://github.com/bsv-blockchain/wab/blob/master/README.md"
+
 WORKDIR /app
 
 # Copy only the manifest files first for better caching
@@ -17,17 +28,30 @@ RUN npm run build
 # ------------------------------------------------------------------------------
 # 2) Production Stage: runs the app
 # ------------------------------------------------------------------------------
-FROM node:22-alpine
+FROM public.ecr.aws/docker/library/node:20-bookworm-slim
+
+# OCI-compliant labels for AWS Marketplace
+LABEL org.opencontainers.image.title="Wallet Authentication Backend"
+LABEL org.opencontainers.image.description="Multi-factor authentication backend for BSV wallets"
+LABEL org.opencontainers.image.vendor="BSV Blockchain"
+LABEL org.opencontainers.image.version="1.0.8"
+LABEL org.opencontainers.image.source="https://github.com/bsv-blockchain/wab"
+LABEL org.opencontainers.image.licenses="Open-BSV-License-v4"
+LABEL org.opencontainers.image.url="https://github.com/bsv-blockchain/wab"
+LABEL org.opencontainers.image.documentation="https://github.com/bsv-blockchain/wab/blob/master/README.md"
+
 WORKDIR /app
 
-# Copy the build output from the builder
+# Copy package files for reference
+COPY package*.json ./
+
+# Copy the compiled TypeScript output
 COPY --from=builder /app/dist ./dist
 
-# Copy only the production dependencies
-COPY package*.json ./
-RUN npm ci --production
+# Copy node_modules from builder (includes compiled native bindings)
+COPY --from=builder /app/node_modules ./node_modules
 
-# Expose is optional - Cloud Run ignores it, but good for local usage
+# Expose port
 EXPOSE 8080
 
 # Start command
