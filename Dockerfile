@@ -1,23 +1,16 @@
 # ------------------------------------------------------------------------------
-# 1) Builder Stage: builds TypeScript
+# 1) Builder Stage: builds TypeScript and compiles native modules
 # ------------------------------------------------------------------------------
-FROM public.ecr.aws/docker/library/node:20-bookworm-slim AS builder
+FROM public.ecr.aws/docker/library/node:22-alpine AS builder
 
-# OCI-compliant labels for AWS Marketplace
-LABEL org.opencontainers.image.title="Wallet Authentication Backend"
-LABEL org.opencontainers.image.description="Multi-factor authentication backend for BSV wallets"
-LABEL org.opencontainers.image.vendor="BSV Blockchain"
-LABEL org.opencontainers.image.version="1.0.8"
-LABEL org.opencontainers.image.source="https://github.com/bsv-blockchain/wab"
-LABEL org.opencontainers.image.licenses="Open-BSV-License-v4"
-LABEL org.opencontainers.image.url="https://github.com/bsv-blockchain/wab"
-LABEL org.opencontainers.image.documentation="https://github.com/bsv-blockchain/wab/blob/master/README.md"
+# Install build tools for native modules (sqlite3, etc.)
+RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
 # Copy only the manifest files first for better caching
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 # Copy the rest of the code
 COPY . ./
@@ -26,15 +19,18 @@ COPY . ./
 RUN npm run build
 
 # ------------------------------------------------------------------------------
-# 2) Production Stage: runs the app
+# 2) Production Stage: minimal runtime image
 # ------------------------------------------------------------------------------
-FROM public.ecr.aws/docker/library/node:20-bookworm-slim
+FROM public.ecr.aws/docker/library/node:22-alpine
 
-# OCI-compliant labels for AWS Marketplace
+# Patch any OS-level CVEs in the base image
+RUN apk upgrade --no-cache
+
+# OCI-compliant labels
 LABEL org.opencontainers.image.title="Wallet Authentication Backend"
 LABEL org.opencontainers.image.description="Multi-factor authentication backend for BSV wallets"
 LABEL org.opencontainers.image.vendor="BSV Blockchain"
-LABEL org.opencontainers.image.version="1.0.8"
+LABEL org.opencontainers.image.version="1.4.1"
 LABEL org.opencontainers.image.source="https://github.com/bsv-blockchain/wab"
 LABEL org.opencontainers.image.licenses="Open-BSV-License-v4"
 LABEL org.opencontainers.image.url="https://github.com/bsv-blockchain/wab"
