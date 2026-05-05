@@ -1,5 +1,9 @@
 # Wallet Authentication Backend (WAB)
 
+> **⚠️ This repository is being archived.**
+>
+> Development has moved to the [ts-stack monorepo](https://github.com/bsv-blockchain/ts-stack/tree/main/infrastructure%20components/wab). Open issues will be migrated there. This repository will be archived in the coming days — please open new issues and PRs in the monorepo going forward.
+
 Welcome to the **Wallet Authentication Backend (WAB)** project! This README provides a **comprehensive, ground-up guide** to help you **understand**, **configure**, **deploy**, and **run** your own WAB server. 
 
 ---
